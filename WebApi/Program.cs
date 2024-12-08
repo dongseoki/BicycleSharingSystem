@@ -1,4 +1,6 @@
 
+using Microsoft.EntityFrameworkCore;
+
 namespace BicycleSharingSystem.WebApi;
 
 public class Program
@@ -16,6 +18,11 @@ public class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
+        // builder 보다 아래, app 보다 위 중 편한 곳에 위치
+        var connectionString = "server=localhost;user=root;password=1111;database=workshopdb";
+        var serverVersion = new MySqlServerVersion(new Version(9, 0));
+        builder.Services.AddDbContext<BicycleSharingContext>(options => options.UseMySql(connectionString, serverVersion));
+
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
@@ -32,6 +39,12 @@ public class Program
 
         app.MapControllers();
 
+        // app 보다 아래 app.Run() 보다 위 중 편한 곳에 위치
+        using (var scope = app.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<BicycleSharingContext>();
+            Task.Run(context.InitializeDatabaseAsync);
+        }
 
         var summaries = new[]
         {
